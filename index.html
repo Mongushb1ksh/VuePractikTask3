@@ -11,15 +11,16 @@
 <body>
     <div id="app">
         <div class="kanban-board">
-            <div class="column" v-for="(column, index) in columns" :key="index">
+            <div class="column" v-for="(column, columnIndex) in columns" :key="column.title">
                 <h2>{{ column.title }}</h2>
                 <div class="card-list">
-                    <card-form v-if="index === 0" @add-card="addCard"></card-form>
+                    <card-form v-if="columnIndex === 0" @add-card="addCard"></card-form>
                     <task-card v-for="card in column.cards" 
                                :key="card.id" :card="card"
-                               @move-card="moveCard(index, card)"
-                               @card-move="cardMove(index, card)"
-                               @delete-card="deleteCard(card)"           
+                               :column-index="columnIndex"
+                                @card-move="cardMove(columnIndex, card)"
+                                @move-card="moveCard(columnIndex, card)"
+                                @delete-card="deleteCard(card)"           
                     ></task-card>
                 </div>
             </div>

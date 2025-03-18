@@ -42,7 +42,11 @@ Vue.component('card-form', {
 Vue.component('task-card', {
     props: {
         card: {
-            type: Array,
+            type: Object,
+            required: true,
+        },
+        columnIndex: {
+            type: Number,
             required: true,
         },
     },
@@ -53,8 +57,8 @@ Vue.component('task-card', {
             <div>Создано: {{ card.createdAt }}</div>
             <div>Дедлайн:{{ formatDate(card.deadline) }}</div>
             <div v-if="card.completedAt">Завершено: {{ card.completedAt }}</div>
-            <button @click="$emit('card-move')">На исправления</button>
-            <button @click="$emit('move-card')">Переместить</button>
+            <button v-if="columnIndex === 2" @click="$emit('card-move')">На исправления</button>
+            <button v-if="columnIndex < 3" @click="$emit('move-card')">Переместить</button>
             <button @click="$emit('delete-card')">Удалить</button>
         </div>
     `,
@@ -76,7 +80,6 @@ let app = new Vue({
                 { title: 'Задачи в работе', cards: [] },
                 { title: 'Тестирование', cards: [] },
                 { title: 'Выполненные задачи', cards: [] },
-
             ],
     },
 
@@ -90,14 +93,16 @@ let app = new Vue({
         },
 
         cardMove(fromColumn, card){
-            const toColumn = fromColumn - 1;
-            this.columns[fromColumn].cards = this.columns[fromColumn].cards.filter(a => a.id !== card.id);
-            this.columns[toColumn].cards.push(card);
-            this.saveData();
-
+            if(fromColumn === 2){
+                const toColumn = fromColumn - 1;
+                this.columns[fromColumn].cards = this.columns[fromColumn].cards.filter(a => a.id !== card.id);
+                this.columns[toColumn].cards.push(card);
+                this.saveData();
+            }
         },
 
         moveCard(fromColumn, card){
+            if(fromColumn >= 3) return;
             const toColumn = fromColumn + 1;
             this.columns[fromColumn].cards = this.columns[fromColumn].cards.filter(a => a.id !== card.id);
             this.columns[toColumn].cards.push(card);
@@ -119,17 +124,24 @@ let app = new Vue({
         },
 
         saveData(){
-            localStorage.setItem('notesApp', JSON.stringify(this.columns));
+            const dataToSave = this.columns.map(column => ({
+                title: column.title,
+                cards: Array.isArray(column.cards) ? column.cards : []
+            }));
+            localStorage.setItem('notesApp', JSON.stringify(dataToSave));
         },
         loadData(){
             const savedData = localStorage.getItem('notesApp');
             if(savedData){
                 const parsedData = JSON.parse(savedData);
-                parsedData.forEach((columnData, index) => {
-                    if(Array.isArray(columnData.cards)){
-                        this.$set(this.columns[index], 'cards', columnData.cards)
+                this.columns.forEach((column, index) => {
+                    const savedColumn = parsedData.find(c => c.title === column.title);
+                    if(savedColumn && Array.isArray(savedColumn.cards)){
+                        this.$set(column, 'cards', savedColumn.cards);
+                    }else{
+                        this.$set(column, 'cards', []);
                     }
-                })
+                });
             };
             this.saveData();
         },
