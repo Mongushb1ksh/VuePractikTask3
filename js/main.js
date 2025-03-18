@@ -50,13 +50,15 @@ Vue.component('task-card', {
         <div class="card">
             <h3>{{ card.title }}</h3>
             <p>{{ card.description }}</p>
+            <div>Создано: {{ card.createdAt }}</div>
             <div>Дедлайн:{{ formatDate(card.deadline) }}</div>
             <button @click="$emit('move-card')">Переместить</button>
+            <button @click="$emit('delete-card')">Удалить</button>
         </div>
     `,
     methods: {
         formatDate(date){
-            return new Date(date).toLocaleString();
+            return new Date(date).toLocaleDateString();
         },
     },
 })
@@ -82,11 +84,45 @@ let app = new Vue({
             this.$set(this.columns[0], 'cards', []);
         }
             this.columns[0].cards.push(newCard);
+            this.saveData();
         },
         moveCard(fromColumn, card){
             const toColumn = fromColumn + 1;
             this.columns[fromColumn].cards = this.columns[fromColumn].cards.filter(a => a.id !== card.id);
             this.columns[toColumn].cards.push(card);
+            this.saveData();
         },
+        deleteCard(card){
+            this.columns.forEach(column => {
+                const index = column.cards.findIndex(c => c.id === card.id)
+                if(index !== -1){
+                    column.cards.splice(index, 1);
+                    this.saveData();
+                }
+            })
+            
+        },
+
+        saveData(){
+            localStorage.setItem('notesApp', JSON.stringify(this.columns));
+        },
+        loadData(){
+            const savedData = localStorage.getItem('notesApp');
+            if(savedData){
+                const parsedData = JSON.parse(savedData);
+                parsedData.forEach((columnData, index) => {
+                    if(Array.isArray(columnData.cards)){
+                        this.$set(this.columns[index], 'cards', columnData.cards)
+                    }
+                })
+            };
+            this.saveData();
+        },
+
     },
+
+    created() {
+        this.loadData();
+    },
+
 });
