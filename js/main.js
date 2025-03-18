@@ -14,7 +14,7 @@ Vue.component('card-form', {
 
     data(){
         return{
-            card:{
+            card: {
                 title: '',
                 description: '',
                 deadline: '',
@@ -26,9 +26,9 @@ Vue.component('card-form', {
         onSubmit(){
             this.$emit('add-card',{
                 card:{
-                    title: '',
-                    description: '',
-                    deadline: '',
+                    title: this.card.title,
+                    description: this.card.description,
+                    deadline: this.card.deadline,
                 },
                 id: Date.now(),
                 createdAt: new Date().toLocaleString(),
@@ -46,7 +46,8 @@ Vue.component('task-card', {
         <div class="card">
             <h3>{{ card.title }}</h3>
             <p>{{ card.description }}</p>
-            <div>Дедлайн: {{}}</div>
+            <div>Дедлайн:{{ card.deadline }}</div>
+            <button @click="$emit('move-card', 1)">Переместить</button>
         </div>
     `
 })
@@ -67,9 +68,13 @@ let app = new Vue({
     },
 
     methods:{
-        addCard(){
-            this.column[0].card.push(newCard);
+        addCard(newCard){
+            this.columns[0].cards.push(newCard);
         },
+        moveCard(fromColumn, card){
+
+        },
+
     },
 
    
