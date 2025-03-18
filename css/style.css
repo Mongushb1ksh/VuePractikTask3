@@ -1,0 +1,27 @@
+.kanban-board{
+    display: flex;
+    gap: 20px;
+}
+.column {
+    flex: 1;
+    min-width: 300px;
+    border-radius: 10px;
+    border: 2px solid black;
+    padding: 20px;
+}
+
+.card{
+    border: 1px solid black;
+    background-color: rgb(240, 240, 240);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    min-height: 200px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+input, textarea{
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+}
