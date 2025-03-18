@@ -1,14 +1,20 @@
 let eventBus = new Vue()
 
 Vue.component('card-form', {
+    props: {
+        initialCard: {
+            type: Object,
+            required: false,
+        }
+    },
 
     template:`
         <form class="card" @submit.prevent="onSubmit">
-            <h3>Новая задача</h3>
+            <h3>{{ isEditing ? 'Редактировать' : 'Новая задача'}}</h3>
             <input v-model="card.title" placeholder="Заголовок" required>
             <textarea v-model="card.description" placeholder="Описание" required></textarea>
             <input type="date" v-model="card.deadline" required>
-            <button type="submit">Создать</button>
+            <button type="submit">{{isEditing ? 'Сохранить' : 'Создать'}}</button>
         </form>
     `,
 
@@ -21,11 +27,23 @@ Vue.component('card-form', {
             }
         }
     },
+    computed: {
+        isEditing(){
+            return !!this.initialCard;
+        }
+    },
 
     methods:{
+        resetForm(){
+            this.card = this.initialCard ? { title: this.initialCard.title,
+                                             description: this.initialCard.description,
+                                             deadline: this.initialCard.deadline, } 
+                                         : { title: '', description: '', deadline: '' }; 
+        },
+
         onSubmit(){
             const newCard = { 
-                id: Date.now(),               
+                id: this.initialCard ? this.initialCard.id : Date.now(),              
                 title: this.card.title,
                 description: this.card.description,
                 deadline: this.card.deadline,
@@ -33,9 +51,13 @@ Vue.component('card-form', {
                 update: new Date().toLocaleString(),
             };
             this.$emit('add-card', newCard);
+            this.resetForm();
             this.card = { title: '', description: '', deadline: '' };
         }
     },
+    created(){
+        this.resetForm()
+    }
 })
 
 
@@ -59,6 +81,7 @@ Vue.component('task-card', {
             <div v-if="card.completedAt">Завершено: {{ card.completedAt }}</div>
             <button v-if="columnIndex === 2" @click="$emit('card-move')">На исправления</button>
             <button v-if="columnIndex < 3" @click="$emit('move-card')">Переместить</button>
+            <button v-if="columnIndex === 0" @click="$emit('edit-card')">Редактировать</button>
             <button @click="$emit('delete-card')">Удалить</button>
         </div>
     `,
@@ -81,17 +104,17 @@ let app = new Vue({
                 { title: 'Тестирование', cards: [] },
                 { title: 'Выполненные задачи', cards: [] },
             ],
+            editingCard: null,
+            editingCardColumn: null,
+            showNewCardForm: false,
+
     },
 
     methods:{
         addCard(newCard){
-        if(!Array.isArray(this.columns[0].cards)){
-            this.$set(this.columns[0], 'cards', []);
-        }
             this.columns[0].cards.push(newCard);
             this.saveData();
         },
-
         cardMove(fromColumn, card){
             if(fromColumn === 2){
                 const toColumn = fromColumn - 1;
@@ -121,6 +144,26 @@ let app = new Vue({
                 }
             })
             
+        },
+
+        editCard(card, columnIndex){
+            this.editingCard =  { ...card };
+            this.editingCardColumn = columnIndex;
+        },
+
+        saveCard(updateCard){
+            this.columns.forEach(column => {
+                const index = column.cards.findIndex(c => c.id === updateCard.id);
+                if(index !== -1){
+                    updateCard.updatedAt = new Date().toLocaleString();
+                    this.$set(column.cards, index, { title: this.updatedCard.title,
+                                                     description: this.updatedCard.description,
+                                                     deadline: this.updatedCard.deadline, });
+                    this.saveData();
+                }
+            });
+            this.editingCard = null;
+            this.editingCardColumn = null;
         },
 
         saveData(){

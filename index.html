@@ -14,14 +14,26 @@
             <div class="column" v-for="(column, columnIndex) in columns" :key="column.title">
                 <h2>{{ column.title }}</h2>
                 <div class="card-list">
-                    <card-form v-if="columnIndex === 0" @add-card="addCard"></card-form>
+                    <button
+                        v-if="columnIndex === 0 && !showNewCardForm && !editingCard"
+                        @click="showNewCardForm = true" 
+                    >Создать карточку</button>
+                    <card-form v-if="editingCard && editingCardColumn === columnIndex"
+                               @save-card="saveCard"
+                               :initial-card="editingCard"
+                    ></card-form>
+                    <card-form v-else-if="showNewCardForm && columnIndex === 0" 
+                               @add-card="addCard"
+                    ></card-form>
                     <task-card v-for="card in column.cards" 
                                :key="card.id" :card="card"
                                :column-index="columnIndex"
                                 @card-move="cardMove(columnIndex, card)"
                                 @move-card="moveCard(columnIndex, card)"
-                                @delete-card="deleteCard(card)"           
+                                @delete-card="deleteCard(card)"
+                                @edit-card="editCard(card, columnIndex)"           
                     ></task-card>
+                    
                 </div>
             </div>
         </div>
