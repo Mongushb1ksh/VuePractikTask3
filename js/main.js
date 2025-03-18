@@ -42,7 +42,7 @@ Vue.component('card-form', {
 Vue.component('task-card', {
     props: {
         card: {
-            type: Object,
+            type: Array,
             required: true,
         },
     },
@@ -52,6 +52,8 @@ Vue.component('task-card', {
             <p>{{ card.description }}</p>
             <div>Создано: {{ card.createdAt }}</div>
             <div>Дедлайн:{{ formatDate(card.deadline) }}</div>
+            <div v-if="card.completedAt">Завершено: {{ card.completedAt }}</div>
+            <button @click="$emit('card-move')">На исправления</button>
             <button @click="$emit('move-card')">Переместить</button>
             <button @click="$emit('delete-card')">Удалить</button>
         </div>
@@ -86,10 +88,23 @@ let app = new Vue({
             this.columns[0].cards.push(newCard);
             this.saveData();
         },
+
+        cardMove(fromColumn, card){
+            const toColumn = fromColumn - 1;
+            this.columns[fromColumn].cards = this.columns[fromColumn].cards.filter(a => a.id !== card.id);
+            this.columns[toColumn].cards.push(card);
+            this.saveData();
+
+        },
+
         moveCard(fromColumn, card){
             const toColumn = fromColumn + 1;
             this.columns[fromColumn].cards = this.columns[fromColumn].cards.filter(a => a.id !== card.id);
             this.columns[toColumn].cards.push(card);
+            if(toColumn === 3){
+                card.completedAt = new Date().toLocaleString();
+            };
+
             this.saveData();
         },
         deleteCard(card){
