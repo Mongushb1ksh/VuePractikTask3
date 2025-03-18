@@ -15,8 +15,7 @@
                 <h2>{{ column.title }}</h2>
                 <div class="card-list">
                     <card-form v-if="index === 0" @add-card="addCard"></card-form>
-                    <task-card v-for="card in column.cards" :key="card.id" :card="card"></task-card>
-                    
+                    <task-card v-for="card in column.cards" :key="card.id" :card="card" @move-card="moveCard(index, card)"></task-card>
                 </div>
             </div>
         </div>

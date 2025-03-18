@@ -24,16 +24,15 @@ Vue.component('card-form', {
 
     methods:{
         onSubmit(){
-            this.$emit('add-card',{
-                card:{
-                    title: this.card.title,
-                    description: this.card.description,
-                    deadline: this.card.deadline,
-                },
-                id: Date.now(),
+            const newCard = { 
+                id: Date.now(),               
+                title: this.card.title,
+                description: this.card.description,
+                deadline: this.card.deadline,
                 createdAt: new Date().toLocaleString(),
                 update: new Date().toLocaleString(),
-            });
+            };
+            this.$emit('add-card', newCard);
             this.card = { title: '', description: '', deadline: '' };
         }
     },
@@ -41,15 +40,25 @@ Vue.component('card-form', {
 
 
 Vue.component('task-card', {
-    props:['card'],
+    props: {
+        card: {
+            type: Object,
+            required: true,
+        },
+    },
     template:`
         <div class="card">
             <h3>{{ card.title }}</h3>
             <p>{{ card.description }}</p>
-            <div>Дедлайн:{{ card.deadline }}</div>
-            <button @click="$emit('move-card', 1)">Переместить</button>
+            <div>Дедлайн:{{ formatDate(card.deadline) }}</div>
+            <button @click="$emit('move-card')">Переместить</button>
         </div>
-    `
+    `,
+    methods: {
+        formatDate(date){
+            return new Date(date).toLocaleString();
+        },
+    },
 })
 
 
@@ -69,13 +78,15 @@ let app = new Vue({
 
     methods:{
         addCard(newCard){
+        if(!Array.isArray(this.columns[0].cards)){
+            this.$set(this.columns[0], 'cards', []);
+        }
             this.columns[0].cards.push(newCard);
         },
         moveCard(fromColumn, card){
-
+            const toColumn = fromColumn + 1;
+            this.columns[fromColumn].cards = this.columns[fromColumn].cards.filter(a => a.id !== card.id);
+            this.columns[toColumn].cards.push(card);
         },
-
     },
-
-   
 });
