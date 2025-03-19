@@ -35,10 +35,7 @@ Vue.component('card-form', {
 
     methods:{
         resetForm(){
-            this.card = this.initialCard ? { title: this.initialCard.title,
-                                             description: this.initialCard.description,
-                                             deadline: this.initialCard.deadline, } 
-                                         : { title: '', description: '', deadline: '' }; 
+            this.card = this.initialCard ? { ...this.initialCard } : { title: '', description: '', deadline: '' }; 
         },
 
         onSubmit(){
@@ -52,7 +49,6 @@ Vue.component('card-form', {
             };
             this.$emit('add-card', newCard);
             this.resetForm();
-            this.card = { title: '', description: '', deadline: '' };
         }
     },
     created(){
@@ -107,12 +103,24 @@ let app = new Vue({
             editingCard: null,
             editingCardColumn: null,
             showNewCardForm: false,
+            showModal: false,
 
     },
 
     methods:{
+
+        openModal(){
+            this.editingCard = null;
+            this.showModal = true;
+        },
+
+        closeModal(){
+            this.showModal = false;
+            this.editingCard = null;
+        },
         addCard(newCard){
             this.columns[0].cards.push(newCard);
+            this.showNewCardForm = false;
             this.saveData();
         },
         cardMove(fromColumn, card){
@@ -149,16 +157,18 @@ let app = new Vue({
         editCard(card, columnIndex){
             this.editingCard =  { ...card };
             this.editingCardColumn = columnIndex;
+            this.showNewCardForm = true;
         },
 
         saveCard(updateCard){
             this.columns.forEach(column => {
                 const index = column.cards.findIndex(c => c.id === updateCard.id);
                 if(index !== -1){
-                    updateCard.updatedAt = new Date().toLocaleString();
-                    this.$set(column.cards, index, { title: this.updatedCard.title,
-                                                     description: this.updatedCard.description,
-                                                     deadline: this.updatedCard.deadline, });
+                    updateCard.update = new Date().toLocaleString();
+                    this.$set(column.cards, index, { title: updateCard.title,
+                                                     description: updateCard.description,
+                                                     deadline: updateCard.deadline, 
+                                                    });
                     this.saveData();
                 }
             });
