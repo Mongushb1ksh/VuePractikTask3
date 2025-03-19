@@ -36,7 +36,7 @@ Vue.component('card-form', {
 
     methods:{
         resetForm(){
-            this.card = this.initialCard ? { ...this.initialCard } : { title: '', description: '', deadline: '' }; 
+            this.card = { title: '', description: '', deadline: '' }; 
         },
 
         onSubmit(){
@@ -45,8 +45,9 @@ Vue.component('card-form', {
                 title: this.card.title,
                 description: this.card.description,
                 deadline: this.card.deadline,
-                createdAt: new Date().toLocaleString(),
-                update: new Date().toLocaleString(),
+                createdAt: this.initialCard ? this.initialCard.createdAt : new Date().toLocaleString(),
+                editAt:  this.initialCard ? new Date().toLocaleString() : '',
+                updateAt: new Date().toLocaleString(),
             };
             this.$emit(this.initialCard ? 'save-card' : 'add-card', newCard);
             this.resetForm();
@@ -54,8 +55,10 @@ Vue.component('card-form', {
         }
     },
     created(){
-        this.resetForm()
-    }
+        if(this.initialCard){
+            this.card = {...this.initialCard}
+        }
+    },
 })
 
 
@@ -104,7 +107,6 @@ let app = new Vue({
             ],
             editingCard: null,
             editingCardColumn: null,
-            showNewCardForm: false,
             showModal: false,
 
     },
@@ -114,15 +116,19 @@ let app = new Vue({
         openModal(){
             this.editingCard = null;
             this.showModal = true;
+            this.$nextTick(() => {
+                this.$refs.cardForm.resetForm();
+            });
         },
 
         closeModal(){
             this.showModal = false;
             this.editingCard = null;
+            this.editingCardColumn = null;
         },
         addCard(newCard){
             this.columns[0].cards.push(newCard);
-            this.showNewCardForm = false;
+            this.closeModal();
             this.saveData();
         },
         cardMove(fromColumn, card){
@@ -156,25 +162,28 @@ let app = new Vue({
             
         },
 
-        editCard(card){
+        editCard(card, columnIndex){
             this.editingCard =  { ...card };
-            this.editingCardColumn = this.columns.findIndex(col => 
-                col.cards.some(c => c.id === card.id)
-            );
+            this.editingCardColumn = columnIndex;
             this.showModal= true;
+            this.$nextTick(() => {
+                this.$refs.cardForm.resetForm();
+            });
         },
 
-        saveCard(updateCard){
-            this.columns.forEach(column => {
-                const index = column.cards.findIndex(c => c.id === updateCard.id);
-                if(index !== -1){
-                    updateCard.update = new Date().toLocaleString();
-                    this.$set(column.cards, index, {...updateCard });
-                    this.saveData();
-                }
-            });
-            this.editingCard = null;
-            this.editingCardColumn = null;
+        saveCard(updatedCard){
+            const column = this.columns[this.editingCardColumn];
+            const index = column.cards.findIndex(c => c.id === updatedCard.id);
+            if(index !== -1){
+              
+                this.$set(column.cards, index,  {
+                    ...column.cards[index],
+                    ...updatedCard, 
+                    updateAt: new Date().toLocaleString() 
+                }    );
+                this.closeModal();
+                this.saveData();
+            }
         },
 
         saveData(){
