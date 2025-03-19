@@ -15,8 +15,7 @@
                 <h2>{{ column.title }}</h2>
                 <div class="card-list">
                     <button
-                        v-if="columnIndex === 0 && !showNewCardForm && !editingCard && !showModal"
-                        @click="showNewCardForm = true"
+                        v-if="columnIndex === 0 && !editingCard && !showModal"
                         @click="openModal" 
                     >Добавить задачу</button>
                     <task-card v-for="card in column.cards" 
@@ -31,18 +30,12 @@
             </div>
         </div>
         <div class="modal" v-if="showModal">
-            <div class="modal-content"  v-for="(column, columnIndex) in columns" :key="column.title">
-                <card-form>
-                    <card-form v-if="editingCard && editingCardColumn === columnIndex"
-                               :initial-card="editingCard"
-                               @save-card="saveCard"
-                               @close="closeModal"
-                    ></card-form>
-                    <card-form v-else-if="showNewCardForm && columnIndex === 0" 
-                               @add-card="addCard"
-                               @close="closeModal"
-                    ></card-form>
-                </card-form>
+            <div class="modal-content">
+                <card-form
+                           :initial-card="editingCard"  
+                           @add-card="addCard"
+                           @close="closeModal"
+                ></card-form>
             </div>
         </div>
     </div>

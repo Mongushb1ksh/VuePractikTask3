@@ -15,6 +15,7 @@ Vue.component('card-form', {
             <textarea v-model="card.description" placeholder="Описание" required></textarea>
             <input type="date" v-model="card.deadline" required>
             <button type="submit">{{isEditing ? 'Сохранить' : 'Создать'}}</button>
+            <button type="button" @click="$emit('close')">Отмена</button>
         </form>
     `,
 
@@ -47,8 +48,9 @@ Vue.component('card-form', {
                 createdAt: new Date().toLocaleString(),
                 update: new Date().toLocaleString(),
             };
-            this.$emit('add-card', newCard);
+            this.$emit(this.initialCard ? 'save-card' : 'add-card', newCard);
             this.resetForm();
+            this.$emit('close')
         }
     },
     created(){
@@ -77,8 +79,8 @@ Vue.component('task-card', {
             <div v-if="card.completedAt">Завершено: {{ card.completedAt }}</div>
             <button v-if="columnIndex === 2" @click="$emit('card-move')">На исправления</button>
             <button v-if="columnIndex < 3" @click="$emit('move-card')">Переместить</button>
-            <button v-if="columnIndex === 0" @click="$emit('edit-card')">Редактировать</button>
-            <button @click="$emit('delete-card')">Удалить</button>
+            <button v-if="columnIndex < 3" @click="$emit('edit-card')">Редактировать</button>
+            <button v-if="columnIndex === 0" @click="$emit('delete-card')">Удалить</button>
         </div>
     `,
     methods: {
@@ -154,10 +156,12 @@ let app = new Vue({
             
         },
 
-        editCard(card, columnIndex){
+        editCard(card){
             this.editingCard =  { ...card };
-            this.editingCardColumn = columnIndex;
-            this.showNewCardForm = true;
+            this.editingCardColumn = this.columns.findIndex(col => 
+                col.cards.some(c => c.id === card.id)
+            );
+            this.showModal= true;
         },
 
         saveCard(updateCard){
@@ -165,10 +169,7 @@ let app = new Vue({
                 const index = column.cards.findIndex(c => c.id === updateCard.id);
                 if(index !== -1){
                     updateCard.update = new Date().toLocaleString();
-                    this.$set(column.cards, index, { title: updateCard.title,
-                                                     description: updateCard.description,
-                                                     deadline: updateCard.deadline, 
-                                                    });
+                    this.$set(column.cards, index, {...updateCard });
                     this.saveData();
                 }
             });
