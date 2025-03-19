@@ -48,6 +48,7 @@ Vue.component('card-form', {
                 createdAt: this.initialCard ? this.initialCard.createdAt : new Date().toLocaleString(),
                 editAt:  this.initialCard ? new Date().toLocaleString() : '',
                 updateAt: new Date().toLocaleString(),
+                returnReason: ''
             };
             this.$emit(this.initialCard ? 'save-card' : 'add-card', newCard);
             this.resetForm();
@@ -80,16 +81,36 @@ Vue.component('task-card', {
             <div>Создано: {{ card.createdAt }}</div>
             <div>Дедлайн:{{ formatDate(card.deadline) }}</div>
             <div v-if="card.completedAt">Завершено: {{ card.completedAt }}</div>
-            <button v-if="columnIndex === 2" @click="$emit('card-move')">На исправления</button>
+            <div v-if="card.returnReason">Причина возврата: {{ card.returnReason }}</div>
+            <div v-if="columnIndex === 2">
+                <button @click="showReturnForm = true">На исправления</button>
+                <div v-if="showReturnForm" class="return-form">
+                    <input v-model="returnReason" placeholder="Причина возврата" required>
+                    <button @click="handleReturn">Потвердить</button>
+                </div>
+            </div>
             <button v-if="columnIndex < 3" @click="$emit('move-card')">Переместить</button>
             <button v-if="columnIndex < 3" @click="$emit('edit-card')">Редактировать</button>
             <button v-if="columnIndex === 0" @click="$emit('delete-card')">Удалить</button>
         </div>
     `,
+    data(){
+        return{
+            showReturnForm: false,
+            returnReason: '',
+        }
+    },
     methods: {
         formatDate(date){
             return new Date(date).toLocaleDateString();
         },
+
+        handleReturn(){
+            if(!this.returnReason.trim()) return;
+            this.$emit('card-return', this.card, this.returnReason);
+            this.showReturnForm = false;
+            this.returnReason = '';
+        }
     },
 })
 
@@ -112,6 +133,20 @@ let app = new Vue({
     },
 
     methods:{
+
+        handleCardReturn(card, reason){
+            const fromColumn = 2;
+            const toColumn = fromColumn - 1;
+
+            const updatedCard = {
+                ...card,
+                returnReason: reason,
+            };
+
+            this.columns[fromColumn].cards = this.columns[fromColumn].cards.filter(c => c.id !== card.id);
+            this.columns[toColumn].cards.push(updatedCard);
+            this.saveData();
+        },
 
         openModal(){
             this.editingCard = null;

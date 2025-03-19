@@ -21,7 +21,7 @@
                     <task-card v-for="card in column.cards" 
                                :key="card.id" :card="card"
                                :column-index="columnIndex"
-                                @card-move="cardMove(columnIndex, card)"
+                                @card-return="handleCardReturn"
                                 @move-card="moveCard(columnIndex, card)"
                                 @delete-card="deleteCard(card)"
                                 @edit-card="editCard(card, columnIndex)"           
