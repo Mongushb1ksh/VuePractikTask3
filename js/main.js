@@ -13,7 +13,8 @@ Vue.component('card-form', {
             <h3>{{ isEditing ? 'Редактировать' : 'Новая задача'}}</h3>
             <input v-model="card.title" placeholder="Заголовок" required>
             <textarea v-model="card.description" placeholder="Описание" required></textarea>
-            <input type="date" v-model="card.deadline" required>
+            <label for="dealine">Дедлайн</label>
+            <input type="date" id="deadline" v-model="card.deadline" required>
             <button type="submit">{{isEditing ? 'Сохранить' : 'Создать'}}</button>
             <button type="button" @click="$emit('close')">Отмена</button>
         </form>
@@ -89,6 +90,9 @@ Vue.component('task-card', {
                     <button @click="handleReturn">Потвердить</button>
                 </div>
             </div>
+            <strong v-if="columnIndex === 3 && !card.overdue">Выполнено в срок</strong>
+            <strong v-if="columnIndex === 3 && card.overdue">Просрочено</strong>
+
             <button v-if="columnIndex < 3" @click="$emit('move-card')">Переместить</button>
             <button v-if="columnIndex < 3" @click="$emit('edit-card')">Редактировать</button>
             <button v-if="columnIndex === 0" @click="$emit('delete-card')">Удалить</button>
@@ -178,10 +182,18 @@ let app = new Vue({
         moveCard(fromColumn, card){
             if(fromColumn >= 3) return;
             const toColumn = fromColumn + 1;
+
             this.columns[fromColumn].cards = this.columns[fromColumn].cards.filter(a => a.id !== card.id);
             this.columns[toColumn].cards.push(card);
             if(toColumn === 3){
-                card.completedAt = new Date().toLocaleString();
+                const deadline = new Date(card.deadline);
+                const now = new Date();
+                card.completedAt = now.toLocaleString();
+                if(now > deadline){
+                    card.overdue = true;
+                }else{
+                    card.ovetdue = false;
+                }
             };
 
             this.saveData();

@@ -33,7 +33,7 @@
             <div class="modal-content">
                 <card-form
                            :initial-card="editingCard"  
-                           
+                           @add-card="addCard"
                            @save-card="saveCard"
                            @close="closeModal"
                 ></card-form>
