@@ -11,10 +11,11 @@
 <body>
     <div id="app">
         <div class="kanban-board">
-            <div class="column" v-for="(column, columnIndex) in columns" :key="column.title">
+            <div class="column" v-for="(column, columnIndex) in sortedColumns" :key="column.title">
                 <h2>{{ column.title }}</h2>
                 <div class="card-list">
-                    <button
+                    <button 
+                        class="button-addcard"
                         v-if="columnIndex === 0 && !editingCard && !showModal"
                         @click="openModal" 
                     >Добавить задачу</button>

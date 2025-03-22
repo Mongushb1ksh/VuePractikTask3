@@ -15,6 +15,11 @@ Vue.component('card-form', {
             <textarea v-model="card.description" placeholder="Описание" required></textarea>
             <label for="dealine">Дедлайн</label>
             <input type="date" id="deadline" v-model="card.deadline" required>
+            <select v-model="card.priority" required>
+                <option value="1">Высокий</option>
+                <option value="2">Средний</option>
+                <option value="3">Низкий</option>
+            </select>
             <button type="submit">{{isEditing ? 'Сохранить' : 'Создать'}}</button>
             <button type="button" @click="$emit('close')">Отмена</button>
         </form>
@@ -26,6 +31,7 @@ Vue.component('card-form', {
                 title: '',
                 description: '',
                 deadline: '',
+                priority: '1',
             }
         }
     },
@@ -46,6 +52,7 @@ Vue.component('card-form', {
                 title: this.card.title,
                 description: this.card.description,
                 deadline: this.card.deadline,
+                priority: this.card.priority,
                 createdAt: this.initialCard ? this.initialCard.createdAt : new Date().toLocaleString(),
                 editAt:  this.initialCard ? new Date().toLocaleString() : '',
                 updateAt: new Date().toLocaleString(),
@@ -81,6 +88,7 @@ Vue.component('task-card', {
             <p>{{ card.description }}</p>
             <div>Создано: {{ card.createdAt }}</div>
             <div>Дедлайн:{{ formatDate(card.deadline) }}</div>
+            <div v-if="card.editAt">Последнее редактирование: {{ card.editAt }}</div>
             <div v-if="card.completedAt">Завершено: {{ card.completedAt }}</div>
             <div v-if="card.returnReason">Причина возврата: {{ card.returnReason }}</div>
             <div v-if="columnIndex === 2">
@@ -90,6 +98,12 @@ Vue.component('task-card', {
                     <button @click="handleReturn">Потвердить</button>
                 </div>
             </div>
+            <div>
+                <div class="priority">Приоритет: 
+                    {{ getPriorityText(card.priority) }}
+                </div>
+            </div>
+
             <strong v-if="columnIndex === 3 && !card.overdue">Выполнено в срок</strong>
             <strong v-if="columnIndex === 3 && card.overdue">Просрочено</strong>
 
@@ -105,6 +119,15 @@ Vue.component('task-card', {
         }
     },
     methods: {
+        getPriorityText(priority){
+            return{
+                "1": "Высокий",
+                "2": "Средний",
+                "3": "Низкий",
+            }[priority] || 'Нет';
+        },
+
+
         formatDate(date){
             return new Date(date).toLocaleDateString();
         },
@@ -134,6 +157,16 @@ let app = new Vue({
             editingCardColumn: null,
             showModal: false,
 
+    },
+
+
+    computed:{
+        sortedColumns(){
+            return this.columns.map(column => ({
+                ...column,
+                cards:[...column.cards].sort((a, b) => a.priority - b.priority)
+            }))
+        }
     },
 
     methods:{

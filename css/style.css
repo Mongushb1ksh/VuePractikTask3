@@ -25,6 +25,10 @@ input, textarea{
     margin: 5px 0;
 }
 
+.button-addcard{
+    margin: 10px;
+}
+
 .modal{
     position: fixed;
     top: 0;
