@@ -14,6 +14,7 @@
             <div class="column" v-for="(column, columnIndex) in sortedColumns" :key="column.title">
                 <h2>{{ column.title }}</h2>
                 <div class="card-list">
+                    <button v-if="columnIndex === 0" @click="showTrash = true">Корзина ({{ deletedCards.length }})</button>
                     <button 
                         class="button-addcard"
                         v-if="columnIndex === 0 && !editingCard && !showModal"
@@ -33,6 +34,7 @@
         <div class="modal" v-if="showModal">
             <div class="modal-content">
                 <card-form
+                           ref="cardForm"
                            :initial-card="editingCard"  
                            @add-card="addCard"
                            @save-card="saveCard"
@@ -40,6 +42,15 @@
                 ></card-form>
             </div>
         </div>
+
+        <trash-bin
+            v-if="showTrash"  
+            :deleted-cards="deletedCards"
+            :columns="columns"
+            @close="showTrash = false"
+            @restore="restoreCard"
+        ></trash-bin>
+ 
     </div>
 </body>
 </html>

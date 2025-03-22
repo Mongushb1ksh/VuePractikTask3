@@ -1,5 +1,68 @@
 let eventBus = new Vue()
 
+
+Vue.component('trash-bin', {
+    props: {
+        showTrash: {
+            type: Boolean,
+            required: true
+        },
+        deletedCards: {
+            type: Array,
+            required: true,
+        },
+        columns: {
+            type: Array,
+            required: true,
+        },
+    },
+
+    template: `
+        <div class="trash-modal" v-if="showTrash" >
+            <div class="modal-content">
+                <h3>Корзина</h3>
+                <div v-for="card in deletedCards" :key="card.id" class="trash-item">
+                    <h4>{{ card.title }}</h4>
+                    <select v-model="restoreTarget">
+                        <option value="">Выберите колонку</option>
+                        <option v-for="(col, index) in availableColumns"
+                                :key="index"
+                                :value="index">
+                                {{col.title}}
+                                </option>
+                    </select>
+                    <button @click="restore(card)">Восстановить</button>
+                </div>
+                <button @click="$emit('close')">Закрыть</button>
+            </div>
+        </div>
+    `,
+
+
+    data(){
+        return{
+            restoreTarget: null,
+        }
+    },
+
+    computed:{
+        availableColumns(){
+            return this.columns
+                .filter(col => col.title !== 'Выполненные задачи')
+                .map((col, index) => ({ index, ...col }));
+        }
+    },
+
+    methods:{
+        restore(card){
+            this.$emit('restore', card, this.restoreTarget);
+            this.restoreTarget = null;
+        }
+    },
+
+})
+
+
 Vue.component('card-form', {
     props: {
         initialCard: {
@@ -109,7 +172,7 @@ Vue.component('task-card', {
 
             <button v-if="columnIndex < 3" @click="$emit('move-card')">Переместить</button>
             <button v-if="columnIndex < 3" @click="$emit('edit-card')">Редактировать</button>
-            <button v-if="columnIndex === 0" @click="$emit('delete-card')">Удалить</button>
+            <button v-if="columnIndex === 0" @click="$emit('delete-card', card, columnIndex)">Удалить</button>
         </div>
     `,
     data(){
@@ -156,7 +219,8 @@ let app = new Vue({
             editingCard: null,
             editingCardColumn: null,
             showModal: false,
-
+            deletedCards: [],
+            showTrash: false,
     },
 
 
@@ -170,6 +234,37 @@ let app = new Vue({
     },
 
     methods:{
+        
+        deleteCard(card, columnIndex){
+            const column = this.columns[columnIndex];
+            const index = column.cards.findIndex(c => c.id === card.id);
+            if(index !== -1){
+                const [deletedCard] = column.cards.splice(index, 1);
+                this.deletedCards.push({
+                    ...deletedCard,
+                    deletedFrom: columnIndex
+                });
+                this.saveData();
+            }
+
+        },
+
+
+        restoreCard(card, targetIndex) {
+    if (targetIndex === null) return;
+    const targetColumn = this.columns[targetIndex]; 
+    if (!targetColumn || targetColumn.title === 'Выполненные задачи') return;
+
+    const index = this.deletedCards.findIndex(c => c.id === card.id);
+    if (index !== -1) {
+        const [restoredCard] = this.deletedCards.splice(index, 1);
+        targetColumn.cards.push(restoredCard);
+        targetColumn.cards.sort((a, b) => a.priority - b.priority);
+        this.saveData();
+    }
+}
+
+
 
         handleCardReturn(card, reason){
             const fromColumn = 2;
@@ -231,16 +326,6 @@ let app = new Vue({
 
             this.saveData();
         },
-        deleteCard(card){
-            this.columns.forEach(column => {
-                const index = column.cards.findIndex(c => c.id === card.id)
-                if(index !== -1){
-                    column.cards.splice(index, 1);
-                    this.saveData();
-                }
-            })
-            
-        },
 
         editCard(card, columnIndex){
             this.editingCard =  { ...card };
@@ -267,24 +352,24 @@ let app = new Vue({
         },
 
         saveData(){
-            const dataToSave = this.columns.map(column => ({
-                title: column.title,
-                cards: Array.isArray(column.cards) ? column.cards : []
-            }));
+            const dataToSave = {
+                columns: this.columns.map(column => ({
+                    title: column.title,
+                    cards: Array.isArray(column.cards) ? column.cards : []
+                })),
+                deletedCards: this.deletedCards
+            };
             localStorage.setItem('notesApp', JSON.stringify(dataToSave));
         },
         loadData(){
             const savedData = localStorage.getItem('notesApp');
             if(savedData){
                 const parsedData = JSON.parse(savedData);
-                this.columns.forEach((column, index) => {
-                    const savedColumn = parsedData.find(c => c.title === column.title);
-                    if(savedColumn && Array.isArray(savedColumn.cards)){
-                        this.$set(column, 'cards', savedColumn.cards);
-                    }else{
-                        this.$set(column, 'cards', []);
-                    }
+                this.columns.forEach(column => {
+                    const savedColumn = parsedData.columns?.find(c => c.title === column.title);
+                    this.$set(column, 'cards', savedColumn?.cards || []);
                 });
+                this.deletedCards = parsedData.deletedCards || [];
             };
             this.saveData();
         },
